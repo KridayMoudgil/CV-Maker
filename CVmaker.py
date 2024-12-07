@@ -2,20 +2,20 @@ import requests
 import os
 from tkinter import * 
 from tkinter import filedialog
+import customtkinter
+import base64
 
 def convert_markdown_to_pdf(markdown_content, Resume_file="Resume.pdf", engine="weasyprint"):
     # Define CSS styles for the PDF
     cssfile = """
                 body{
-                   
                     padding: 0px;
                     margin:0px;
                 }
                 h1 {
-                color: MidnightBlue;
-                margin:0px;
-                padding:0px;
-                    
+                    color: MidnightBlue;
+                    margin:0px;
+                    padding:0px;
                 }
                 h3{
                     color: MidnightBlue;
@@ -25,7 +25,6 @@ def convert_markdown_to_pdf(markdown_content, Resume_file="Resume.pdf", engine="
                 li{
                     margin-top:5px;
                 }
-                
                 """
     # API endpoint for converting Markdown to PDF
     url = "https://md-to-pdf.fly.dev"
@@ -50,12 +49,13 @@ def convert_markdown_to_pdf(markdown_content, Resume_file="Resume.pdf", engine="
         print(f"Error {response.status_code}: {response.text}")
 
 class Resume:
-    def __init__(self, name, email, mobile, education, skills, experience, projects, 
+    def __init__(self, name, email, mobile, img, education, skills, experience, projects, 
                  achievements, activities):
         # Initialize the Resume object with user information
         self.name = name
         self.email = email
         self.mobile = mobile
+        self.img = img
         self.education = education
         self.skills = skills
         self.experience = experience
@@ -64,15 +64,16 @@ class Resume:
         self.activities = activities
 
     def generate_markdown(self):
+        # Convert the image to base64
+        image_base64 = self.convert_image_to_base64(self.img)
+        img_tag = f"![](data:image/png;base64,{image_base64})\n\n"
+
         # Generate Markdown content for the resume
-        markdown_text = f"<h1 style=\"text-align:center;\">{self.name
-                    }</h1>\n<p style=\"text-align:center;\">Email: {self.email
-                    } | Mobile: {self.mobile} </p>\n\n"
-        markdown_text += "### Education\n\n---\n\n"
+        markdown_text = f"<h1 style =\"text-align : center;\">{img_tag}</h1><h1 style=\"text-align:center;\">{self.name}</h1>\n<p style=\"text-align:center;\">Email: {self.email} | Mobile: {self.mobile}</p>\n\n"
+
         # Add education details to the Markdown content
         for edu in self.education:
-            markdown_text += f"- {edu['level']}: {edu['institution']} | {edu['field']
-                                    } | Score: {edu['score']} | {edu['duration']}." + "\n\n"
+            markdown_text += f"- {edu['level']}: {edu['institution']} | {edu['field']} | Score: {edu['score']} | {edu['duration']}." + "\n\n"
 
         markdown_text += "### Skills\n\n---\n\n"
         # Add skills to the Markdown content
@@ -98,29 +99,32 @@ class Resume:
         markdown_text += self.activities + '\n'
 
         return markdown_text
- 
+
+    def convert_image_to_base64(self, image_path):
+        # Read image file and convert it to base64
+        with open(image_path, "rb") as img_file:
+            return base64.b64encode(img_file.read()).decode("utf-8")
+
 def get_user_input():
     # Gather user input for creating the resume
-    name = input("Enter your name: ")
-    email = input("Enter your email: ")
+    name = input("Name: ")
+    email = input("E-Mail: ")
     mobile = input("Enter your mobile number: ")
+    root = Tk()
     img = filedialog.askopenfilename()
 
     print("\nEducation:")
     education = []
     while True:
         # Prompt user to add education details
-        edu_input = input(
-            "Do you want to add education details? (yes/no): ").lower()
+        edu_input = input("Do you want to add education details? (yes/no): ").lower()
         if edu_input != 'yes':
             break
-        level = input(
-        "Enter education level (e.g., Graduation(UG/PG), High School): ")
+        level = input("Enter education level (e.g., Graduation(UG/PG), High School): ")
         institution = input(f"Enter the name of the {level} institution: ")
         field = input(f"Enter the field of study at {institution}: ")
         duration = input(f"Enter passing year of {level} at {institution}: ")
-        score = input(
-        f"Enter your score (e.g., GPA/Percentage) of {level} at {institution}: ")
+        score = input(f"Enter your score (e.g., GPA/Percentage) of {level} at {institution}: ")
         education.append({"level": level,"institution": institution,
                           "field": field,"duration": duration,"score": score,})
 
@@ -135,37 +139,31 @@ def get_user_input():
             break
         exp_company_name = input("Enter the company name: ")
         exp_description = input(f"Enter the description for '{job_role}': ")
-        experience.append(
-            {"job_role": job_role, "company_name": exp_company_name, 
-             "description": exp_description})
+        experience.append({"job_role": job_role, "company_name": exp_company_name, 
+                          "description": exp_description})
 
     print("\nProjects:")
     projects = []
     while True:
         # Prompt user to add project details
-        proj_heading = input(
-            "Enter the project Title (or type 'done' to finish): ")
+        proj_heading = input("Enter the project Title (or type 'done' to finish): ")
         if proj_heading.lower() == 'done':
             break
-        proj_description = input(
-            f"Enter the description for '{proj_heading}': ")
-        projects.append(
-            {"name": proj_heading, "description": proj_description})
+        proj_description = input(f"Enter the description for '{proj_heading}': ")
+        projects.append({"name": proj_heading, "description": proj_description})
 
     print("\nAchievements:")
     achievements = []
     while True:
         # Prompt user to add achievement details
-        ach_input = input(
-            "Enter an achievement detail (or type 'done' to finish): ")
+        ach_input = input("Enter an achievement detail (or type 'done' to finish): ")
         if ach_input.lower() == 'done':
             break
         achievements.append(ach_input)
 
     print("\nOther Activities like hobbies:")
-    # Prompt user to add other activities or hobbies
     activities = input("Enter your other activities: ")
-    return Resume(name, email, mobile, education, skills, 
+    return Resume(name, email, mobile, img, education, skills, 
                   experience, projects, achievements, activities)
 
 if __name__ == "__main__":
